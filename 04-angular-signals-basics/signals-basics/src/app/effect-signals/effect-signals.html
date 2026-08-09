@@ -1,0 +1,9 @@
+<hr>
+<h1>Effect signals</h1>
+<h2>Balance: <span>{{ balance() }}</span></h2>
+<h2>Interest: <span>{{ interest() }}</span></h2>
+<h2>Total Balance: {{ finalBalance() }}</h2>
+
+<input type="number" #amountInput placeholder="Enter amount" />
+<button type="button" (click)="addToBalance(amountInput.value)">Add to balance</button>
+
