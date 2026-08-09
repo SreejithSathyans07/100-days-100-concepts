@@ -13,7 +13,7 @@ do I need to repaint?"*
 
 ---
 
-## What we covered, in order (10 points)
+## What we covered
 
 1. **Before signals**, Angular used Zone.js to detect that "something
    happened" (a click, a timer, an HTTP call) and then re-checked the
@@ -97,7 +97,7 @@ do I need to repaint?"*
     changed and exactly what depends on it 
 ---
 
-## computed() and effect() (continued from point 10)
+## computed() and effect()
 
 10. **`computed()` creates a signal whose value is derived automatically**
     from other signals. It has no `.set()` — it's read-only:
