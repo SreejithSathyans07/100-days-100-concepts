@@ -43,9 +43,13 @@ do I need to repaint?"*
    — it doesn't care whether you used a signal or not.
 
 5. **To actually see a difference, we needed `OnPush`** — a stricter
-   mode where a component's view is *only* re-checked when specific
-   things happen to it (an input changes, a template event fires, a
-   signal it reads changes) — not on every random event in the app:
+   mode where a component's view is *only* re-checked when one of
+   exactly 5 specific triggers happens to it:
+   1. An `@Input()` (or `input()`) reference changes
+   2. A DOM event fires from within that component's own template
+   3. An `async`-piped Observable emits
+   4. A signal read in that component's template changes
+   5. Someone manually calls `markForCheck()` / `detectChanges()`
 ```typescript
    @Component({
      selector: 'app-root',
@@ -98,6 +102,7 @@ do I need to repaint?"*
 ---
 
 ## computed() and effect()
+
 
 10. **`computed()` creates a signal whose value is derived automatically**
     from other signals. It has no `.set()` — it's read-only:
@@ -196,3 +201,21 @@ just derived data, no matter how complex the math, and `effect()`
 only for side effects — logging, persistence, API calls — because
 `computed()` isn't guaranteed to run exactly once per change the way
 `effect()` is."
+
+`computed()` and `effect()` are useful on their own merits, regardless of change detection strategy. They give you automatic dependency tracking and correctness, which plain properties never had.
+
+## A real world example
+```typescript
+export class CartComponent { // no OnPush here, deliberately
+  items = signal<CartItem[]>([]);
+
+  subtotal = computed(() => this.items().reduce((sum, i) => sum + i.price * i.qty, 0));
+  tax = computed(() => this.subtotal() * 0.18);
+  total = computed(() => this.subtotal() + this.tax());
+
+  addItem(item: CartItem) {
+    this.items.update(list => [...list, item]);
+  }
+}
+```
+Without signals, you'd likely compute `subtotal/tax/total` as methods, called fresh in the template every render `({{ getSubtotal() }})` — which recalculates from scratch on every single change detection pass, even ones triggered by something completely unrelated (like a search box keystroke elsewhere on the page). With `computed()`, the value is cached and only genuinely recalculated when `items` actually changes — that's a real efficiency win in the calculation itself, independent of whether the component gets checked via `OnPush` or `Default`.
