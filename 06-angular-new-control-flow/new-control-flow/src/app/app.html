@@ -1,0 +1,19 @@
+<h1>New control flow</h1>
+
+@if (myOrder().length > 0) {
+  <h2>Please find the order</h2>
+  <hr />
+  @for (order of myOrder(); track order.orderId) {
+    <h3>Order Id: {{ order.orderId }}</h3>
+    <h3>Product Name: {{ order.productName }}</h3>
+    <h3>Order Quantity: {{ order.quantity }}</h3>
+    @switch (order.deliveryStatus) {
+        @case ('Order confirmed') { <h4>Your order is confirmed and will be dispatched sooner</h4> }
+        @case ('Shipped') { <h4>Your order is already shipped to your address</h4> }
+        @case ('Delivered') { <h4>Your order is delivered</h4> }
+        @case ('Canceled') { <h4>You have cancelled your order</h4> }
+        @default { <h4>Invalid delivery status</h4> }
+    }
+    <hr />
+  }
+}
