@@ -5,3 +5,4 @@
 3. Dotnet: [Pattern Matching](https://github.com/SreejithSathyans07/100-days-100-concepts/tree/main/03-dotnet-pattern-matching-new-switch) [AUG 6]
 4. Angular: [Signals](https://github.com/SreejithSathyans07/100-days-100-concepts/tree/main/04-angular-signals-basics) [AUG 7-9]
 5. Dotnet: [Nullable reference types](https://github.com/SreejithSathyans07/100-days-100-concepts/tree/main/05-dotnet-nullable-reference-types) [AUG 10]
+6. Angular: [New control flow](https://github.com/SreejithSathyans07/100-days-100-concepts/tree/main/06-angular-new-control-flow) [AUG 11]
