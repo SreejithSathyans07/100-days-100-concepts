@@ -6,4 +6,4 @@
 4. Angular: [Signals](https://github.com/SreejithSathyans07/100-days-100-concepts/tree/main/04-angular-signals-basics) [AUG 7-9]
 5. Dotnet: [Nullable reference types](https://github.com/SreejithSathyans07/100-days-100-concepts/tree/main/05-dotnet-nullable-reference-types) [AUG 10]
 6. Angular: [New control flow](https://github.com/SreejithSathyans07/100-days-100-concepts/tree/main/06-angular-new-control-flow) [AUG 11]
-7. Dotnet: [LINQ deferred execution](https://github.com/SreejithSathyans07/100-days-100-concepts/tree/main/07-dotnet-linq-deffered-execution)
+7. Dotnet: [LINQ deferred execution](https://github.com/SreejithSathyans07/100-days-100-concepts/tree/main/07-dotnet-linq-deffered-execution) [AUG 12]
