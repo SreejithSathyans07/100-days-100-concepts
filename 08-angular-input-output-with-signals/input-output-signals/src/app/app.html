@@ -1,0 +1,32 @@
+<div class="order-card">
+  <h2>Place Order</h2>
+
+  <div class="field-group">
+    <label for="productName">Product Name</label>
+    <input id="productName" #productNameInput type="text" placeholder="Enter product name" />
+  </div>
+
+  <div class="field-group">
+    <label for="productQuantity">Quantity</label>
+    <input id="productQuantity" #productQuantityInput type="number" placeholder="Enter quantity" />
+  </div>
+
+  <button type="button" (click)="addProduct(productNameInput.value, productQuantityInput.value)">
+    Order
+  </button>
+</div>
+<br>
+<h1>Old way of passing</h1>
+<app-old-way
+[productName]="productName"
+[productQuantity]="productQuantity"
+(toParent) = "emittedFromChild($event)"
+></app-old-way>
+<h1>New way of passing</h1>
+<app-new-way
+[productName]="productName"
+[productQuantity]="productQuantity"
+(toParent) = "emittedFromChild($event)"
+></app-new-way>
+
+<h1>Message from Child: {{messageFromChild}}</h1>
