@@ -4,7 +4,7 @@
 I/O (database, network, disk) instead of sitting blocked and idle —
 critical for servers handling many simultaneous requests.
 
-**The core problem (Section 1):**
+**The core problem :**
 ```csharp
 // Blocking -- thread is stuck doing nothing for 2 seconds
 public int GetTotal() => CallDatabase();
@@ -21,7 +21,7 @@ time of one task with another, NOT two things happening at the exact
 same instant. True parallelism (`Task.WhenAll`) = two people, two
 machines, genuinely simultaneous — covered in a later section.
 
-**`Task<T>` is a "claim ticket" (Section 2), not the result itself:**
+**`Task<T>` is a "claim ticket", not the result itself:**
 ```csharp
 Task<int> washTask = StartWashingAsync(); // the TICKET -- work already started
 int result = await washTask;               // hands in the ticket, unwraps to the real value
@@ -65,3 +65,107 @@ async Task<int> CountTheStudents()
     return 12;
 }
 ```
+
+### What async/await actually compiles into?
+
+An `async` method compiles into a generated **state machine class**,
+not "just a method." Confirmed this myself via `.GetType()` on an
+un-awaited Task — it printed
+`AsyncStateMachineBox<...g__CountTheStudents...>`, real proof of a
+compiler-generated class.
+
+**Simplified shape of what the compiler generates:**
+```csharp
+class CountTheStudentsStateMachine
+{
+    int state = 0; // "which step am I on?"
+    TaskAwaiter delayAwaiter;
+
+    public void MoveNext()
+    {
+        if (state == 0)
+        {
+            var delayTask = Task.Delay(2000);
+            delayAwaiter = delayTask.GetAwaiter();
+            if (!delayAwaiter.IsCompleted)
+            {
+                state = 1; // remember where to resume
+                delayAwaiter.OnCompleted(MoveNext); // "call me back when done"
+                return; // PAUSE -- thread is freed here
+            }
+        }
+        if (state == 1)
+        {
+            delayAwaiter.GetResult();
+            // ...set the final result on the outer Task
+        }
+    }
+}
+```
+The `return;` at the pause point = "walking away to take a bath" —
+control genuinely returns to the caller, thread is free. When the
+delay finishes, **some** thread (same or different — not guaranteed)
+calls `MoveNext()` again, picking up exactly at `state == 1` — not
+restarting from the top.
+
+**Threads/cores background (asked as a tangent, but foundational):**
+- A **thread** = one sequence of instructions being run.
+- A **core** = one "chef" that can genuinely execute only one
+  instruction at a time.
+- **Parallelism** = multiple cores, genuinely simultaneous work.
+- **Concurrency** = one core, rapidly context-switching between many
+  threads — an illusion of simultaneity built from fast switching.
+- The **thread pool** is the "kitchen manager" handing free chefs to
+  waiting work — this is exactly what a freed thread returns to after
+  an `await` pause, and it's not reserved for the task it just left;
+  it can pick up any pending work anywhere in the app.
+
+---
+
+### Sequential vs Parallel (hands-on, confirmed)
+
+```csharp
+async Task<int> Step1Async()
+{
+    Console.WriteLine("Step 1 starting...");
+    await Task.Delay(2000);
+    return 10;
+}
+
+async Task<int> Step2Async()
+{
+    Console.WriteLine("Step 2 starting...");
+    await Task.Delay(2000);
+    return 20;
+}
+
+// Sequential -- Step2 only starts after Step1 fully finishes
+var sw = System.Diagnostics.Stopwatch.StartNew();
+var a = await Step1Async();
+var b = await Step2Async();
+sw.Stop();
+Console.WriteLine($"Total: {a + b}, took {sw.ElapsedMilliseconds}ms"); // ~4000ms
+
+// Parallel -- both start immediately, wait for both together
+sw = System.Diagnostics.Stopwatch.StartNew();
+Task<int> task1 = Step1Async(); // starts now, not awaited yet
+Task<int> task2 = Step2Async(); // starts now too -- both running concurrently
+int[] results = await Task.WhenAll(task1, task2);
+sw.Stop();
+Console.WriteLine($"Total: {results[0] + results[1]}, took {sw.ElapsedMilliseconds}ms"); // ~2000ms
+```
+
+**Confirmed via my own run:** sequential took roughly double the
+parallel version — because calling an async method starts it
+immediately (Section 2), `task1`/`task2` are both genuinely running at
+the same time the moment both lines execute; `Task.WhenAll` just waits
+for whichever finishes last, so total time ≈ the *longer* delay, not
+the *sum* of both.
+
+**One-liner for interviews (partial, more tomorrow):** "Sequential
+`await` waits for each operation to fully finish before starting the
+next; starting tasks first and awaiting them together with
+`Task.WhenAll` lets independent operations run concurrently, so total
+time is bounded by the slowest one, not the sum."
+
+---
