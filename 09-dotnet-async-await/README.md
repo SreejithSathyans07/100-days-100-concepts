@@ -169,3 +169,70 @@ next; starting tasks first and awaiting them together with
 time is bounded by the slowest one, not the sum."
 
 ---
+
+### SynchronizationContext & ConfigureAwait(false)
+
+**What it is:** some app types (WPF, WinForms, old ASP.NET) enforce
+"only one specific thread — the UI thread — may touch the UI."
+`SynchronizationContext` is what lets `await` automatically resume back
+on that privileged context after the awaited work completes elsewhere.
+
+```csharp
+// WPF button click handler, runs on the UI thread
+private async void Button_Click(object sender, EventArgs e)
+{
+    var data = await FetchDataAsync(); // resumes back on the UI thread automatically
+    myLabel.Text = data; // safe -- still on the UI thread
+}
+```
+
+**`ConfigureAwait(false)`** skips that "resume on the original context"
+step — "any thread pool thread is fine to continue on":
+```csharp
+var data = await FetchDataAsync().ConfigureAwait(false);
+```
+
+**Why it matters in a library specifically:** library code doesn't know
+or control what kind of app calls it. If a WPF app calls a library that
+doesn't use `ConfigureAwait(false)`, every `await` inside tries to hop
+back to the UI thread — wasted overhead, and a real **deadlock risk** if
+the caller is also blocking synchronously (`.Result`) on that same UI
+thread: the UI thread waits for the library, the library waits to get
+back onto the UI thread — neither can proceed.
+
+**Gotcha — it's about the privileged CONTEXT, not "the same thread that
+called it."** My first pass at this got it slightly wrong: it's not
+"the exact thread that invoked it" — it's specifically "the one thread
+WPF designates as the UI thread." A console app has no such privileged
+context, so any thread pool thread resuming the continuation is fine —
+that's exactly why `Step1Async`/`Step2Async` above never needed
+`ConfigureAwait(false)` to behave correctly.
+
+**Rule of thumb:** library code with no reason to care which thread it
+resumes on → use `ConfigureAwait(false)` defensively on every await.
+Application-level code (e.g. a click handler) usually should let the
+default behavior run, since it often genuinely needs the UI thread back.
+
+---
+
+### Full picture, tied together
+
+1. **Section 1:** blocking calls waste threads during I/O waits.
+2. **Section 2:** `Task<T>` is a "ticket" for work already in progress;
+   `await` unwraps it into the real value.
+3. **Section 3:** `async`/`await` compiles into a pause/resume state
+   machine; `return` at a pause frees the thread.
+4. **Section 4:** starting tasks first, awaiting together via
+   `Task.WhenAll`, overlaps independent work — total time ≈ the
+   slowest task, not the sum.
+5. **Section 5:** `ConfigureAwait(false)` skips resuming on a
+   privileged context (like the UI thread) — a defensive habit for
+   library code, to avoid overhead and deadlocks.
+
+**One-liner for interviews:** "`async`/`await` compiles into a
+compiler-generated state machine that frees the thread during I/O
+waits instead of blocking it. Starting independent tasks before
+awaiting them (`Task.WhenAll`) lets them run concurrently, cutting
+total time to roughly the slowest one. And I use `ConfigureAwait(false)`
+in library code since it has no need to resume on a caller's privileged
+thread context, avoiding both overhead and potential deadlocks."
