@@ -9,3 +9,5 @@
 7. Dotnet: [LINQ deferred execution](https://github.com/SreejithSathyans07/100-days-100-concepts/tree/main/07-dotnet-linq-deffered-execution) [AUG 12]
 8. Angular: [New input and output](https://github.com/SreejithSathyans07/100-days-100-concepts/tree/main/08-angular-input-output-with-signals) [AUG 13]
 9. Dotnet: [Async Await](https://github.com/SreejithSathyans07/100-days-100-concepts/tree/main/09-dotnet-async-await)[AUG 13-14]
+10. Dotnet: [SOLID principles](https://github.com/SreejithSathyans07/100-days-100-concepts/tree/main/10-solid-principles) [AUG 20-21]
+11. Angular: [Content Projection](https://github.com/SreejithSathyans07/100-days-100-concepts/tree/main/11-angular-content-projection) [AUG 21]
